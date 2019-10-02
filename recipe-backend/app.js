@@ -1,6 +1,22 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 
+const mongoose = require("mongoose");
+
+const Recipe = require("./recipeModel/recipe");
+
+mongoose
+  .connect(
+    "mongodb+srv://AnthonyGallegos:n6hVxRAmH9r6uYg7@cluster0-roxtp.mongodb.net/test?retryWrites=true&w=majority"
+  )
+  .then(() => {
+    console.log("Connected to MongoDB Atlas");
+  })
+  .catch(error => {
+    console.log("Dang cannot connect to atlas =(");
+    console.error(error);
+  });
+
 const app = express();
 
 app.use((req, res, next) => {
@@ -19,23 +35,37 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 
 app.post("/api/recipes", (req, res, next) => {
-  console.log(req.body);
-  res.status(201).json({
-    message: "recipe created successfully"
+  const recipe = new Recipe({
+    title: req.body.title,
+    ingredients: req.body.ingredients,
+    instructions: req.body.instructions,
+    time: req.body.time,
+    difficulty: req.body.difficulty
   });
+  recipe
+    .save()
+    .then(() => {
+      res.status(201).json({
+        message: "New Recipe Posted!!"
+      });
+    })
+    .catch(error => {
+      console.log(error);
+      res.status(400).json({
+        error
+      });
+    });
 });
 
 app.use("/api/recipes", (req, res, next) => {
-  const recipe = [
-    {
-      _id: "al;kdjf;akldsjfad",
-      title: "Pizza",
-      ingredients: "dough and sauce",
-      instructions: "bake the pizza",
-      prepareTime: 15,
-      difficulty: 1
-    }
-  ];
-  res.status(200).json(recipe);
+  Recipe.find()
+    .then(recipes => {
+      res.status(200).json(recipes);
+    })
+    .catch(error => {
+      res.status(400).json({
+        error
+      });
+    });
 });
 module.exports = app;
